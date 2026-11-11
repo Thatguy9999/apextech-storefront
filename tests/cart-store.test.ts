@@ -103,3 +103,4 @@ describe('useCartStore - State Management & Inventory Logic', () => {
     expect(useCartStore.getState().getSubtotal()).toBe(0);
   });
 });
+

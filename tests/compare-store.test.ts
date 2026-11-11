@@ -84,3 +84,4 @@ describe('useCompareStore - Side-by-Side Comparison Engine', () => {
     expect(useCompareStore.getState().items).toHaveLength(0);
   });
 });
+

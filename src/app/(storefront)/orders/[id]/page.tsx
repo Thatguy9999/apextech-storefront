@@ -115,12 +115,12 @@ function getStatusBadge(status: OrderStatus) {
   }
 }
 
-function formatCurrency(amount: number | string, currency = "USD"): string {
-  const numeric = typeof amount === "string" ? parseFloat(amount) : amount;
+function formatCurrency(amount: unknown, currency = "USD"): string {
+  const numeric = typeof amount === "number" ? amount : parseFloat(String(amount ?? 0));
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-  }).format(numeric || 0);
+  }).format(isNaN(numeric) ? 0 : numeric);
 }
 
 function parseAddress(

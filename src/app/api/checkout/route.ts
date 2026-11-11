@@ -2,6 +2,7 @@
 // Stripe Checkout Session creation — secured server-side Route Handler
 
 import { NextRequest, NextResponse } from 'next/server';
+import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import { CartLineItem } from '@/types/storefront';
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Build Stripe line items using authoritative DB prices
-    const stripeLineItems: Parameters<typeof stripe.checkout.sessions.create>[0]['line_items'] = [];
+    const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
     for (const item of items) {
       const dbVariant = dbVariants.find((v) => v.id === item.productVariantId)!;

@@ -3,10 +3,7 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
-});
+import { stripe } from "@/lib/stripe";
 
 // Disable Next.js body parsing — we need the raw body for signature verification
 export const dynamic = "force-dynamic";

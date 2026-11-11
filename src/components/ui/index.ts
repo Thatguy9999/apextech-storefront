@@ -6,4 +6,3 @@ export * from "./Input";
 export * from "./LoadingSpinner";
 export * from "./QuantityStepper";
 export * from "./EmptyState";
-export * from "./ProductCardSkeleton";

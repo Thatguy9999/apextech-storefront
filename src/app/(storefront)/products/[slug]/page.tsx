@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getCompatibilityRecommendations } from "@/lib/compatibility";
 import { ProductDTO, ProductVariantDTO, TechnicalSpecDTO, CompatibilityRecommendation } from "@/types/storefront";
+import { toNum } from "@/lib/utils";
 import PDPClient from "./PDPClient";
 
 // ---------------------------------------------------------------------------
@@ -30,21 +31,21 @@ async function fetchProductBySlug(slug: string): Promise<ProductDTO | null> {
         processor: p.specs.processor ?? undefined,
         processorCores: p.specs.processorCores ?? undefined,
         processorThreads: p.specs.processorThreads ?? undefined,
-        baseClockGhz: p.specs.baseClockGhz ?? undefined,
-        boostClockGhz: p.specs.boostClockGhz ?? undefined,
+        baseClockGhz: toNum(p.specs.baseClockGhz),
+        boostClockGhz: toNum(p.specs.boostClockGhz),
         ramGb: p.specs.ramGb ?? undefined,
         ramType: p.specs.ramType ?? undefined,
         storageGb: p.specs.storageGb ?? undefined,
         storageType: p.specs.storageType ?? undefined,
         gpuModel: p.specs.gpuModel ?? undefined,
         vramGb: p.specs.vramGb ?? undefined,
-        displaySizeInches: p.specs.displaySizeInches ?? undefined,
+        displaySizeInches: toNum(p.specs.displaySizeInches),
         displayResolution: p.specs.displayResolution ?? undefined,
         panelType: p.specs.panelType ?? undefined,
         refreshRateHz: p.specs.refreshRateHz ?? undefined,
-        batteryCapacityWh: p.specs.batteryCapacityWh ?? undefined,
+        batteryCapacityWh: toNum(p.specs.batteryCapacityWh),
         powerSupplyWattage: p.specs.powerSupplyWattage ?? undefined,
-        weightKg: p.specs.weightKg ?? undefined,
+        weightKg: toNum(p.specs.weightKg),
         dimensionsMm: p.specs.dimensionsMm ?? undefined,
         operatingSystem: p.specs.operatingSystem ?? undefined,
         wirelessStandard: p.specs.wirelessStandard ?? undefined,
@@ -135,10 +136,10 @@ export default async function ProductDetailPage({ params }: PDPProps) {
     // Gracefully handle if DB not seeded yet
   }
 
-  // @ts-expect-error extended field
   const allImages: { url: string; isPrimary: boolean; altText?: string }[] =
-    // @ts-expect-error extended field
-    product.allImages ?? [{ url: product.primaryImageUrl, isPrimary: true }];
+    ((product as unknown as Record<string, unknown>).allImages as { url: string; isPrimary: boolean; altText?: string }[]) ?? [
+      { url: product.primaryImageUrl, isPrimary: true },
+    ];
 
   return (
     <PDPClient

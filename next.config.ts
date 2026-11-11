@@ -17,10 +17,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: ["@prisma/client"],
-  },
-  swcMinify: true,
+  serverExternalPackages: ["@prisma/client"],
 };
 
 export default nextConfig;

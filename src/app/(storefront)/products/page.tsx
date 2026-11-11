@@ -6,6 +6,7 @@ import FilterSidebar from "@/components/catalog/FilterSidebar";
 import ProductCardSkeleton from "@/components/ui/ProductCardSkeleton";
 import { PackageSearch } from "lucide-react";
 import { Prisma } from "@prisma/client";
+import { toNum } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -122,21 +123,21 @@ async function fetchProducts(filters: FilterParams): Promise<ProductDTO[]> {
           processor: p.specs.processor ?? undefined,
           processorCores: p.specs.processorCores ?? undefined,
           processorThreads: p.specs.processorThreads ?? undefined,
-          baseClockGhz: p.specs.baseClockGhz ?? undefined,
-          boostClockGhz: p.specs.boostClockGhz ?? undefined,
+          baseClockGhz: toNum(p.specs.baseClockGhz),
+          boostClockGhz: toNum(p.specs.boostClockGhz),
           ramGb: p.specs.ramGb ?? undefined,
           ramType: p.specs.ramType ?? undefined,
           storageGb: p.specs.storageGb ?? undefined,
           storageType: p.specs.storageType ?? undefined,
           gpuModel: p.specs.gpuModel ?? undefined,
           vramGb: p.specs.vramGb ?? undefined,
-          displaySizeInches: p.specs.displaySizeInches ?? undefined,
+          displaySizeInches: toNum(p.specs.displaySizeInches),
           displayResolution: p.specs.displayResolution ?? undefined,
           panelType: p.specs.panelType ?? undefined,
           refreshRateHz: p.specs.refreshRateHz ?? undefined,
-          batteryCapacityWh: p.specs.batteryCapacityWh ?? undefined,
+          batteryCapacityWh: toNum(p.specs.batteryCapacityWh),
           powerSupplyWattage: p.specs.powerSupplyWattage ?? undefined,
-          weightKg: p.specs.weightKg ?? undefined,
+          weightKg: toNum(p.specs.weightKg),
           dimensionsMm: p.specs.dimensionsMm ?? undefined,
           operatingSystem: p.specs.operatingSystem ?? undefined,
           wirelessStandard: p.specs.wirelessStandard ?? undefined,

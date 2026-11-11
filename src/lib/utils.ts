@@ -79,3 +79,10 @@ export function getDiscountPercent(original: number, sale: number): number {
   return Math.round(((original - sale) / original) * 100);
 }
 
+/** Convert Prisma Decimal or unknown numeric to number or undefined */
+export function toNum(val: unknown): number | undefined {
+  if (val == null) return undefined;
+  const n = parseFloat(String(val));
+  return isNaN(n) ? undefined : n;
+}
+
