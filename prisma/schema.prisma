@@ -1,0 +1,446 @@
+// prisma/schema.prisma
+// High-performance Headless E-Commerce Storefront for Advanced Electronics
+// Database: PostgreSQL with Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// USER & AUTHENTICATION MODELS
+// ==========================================
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SUPPORT
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String?
+  phone         String?
+  passwordHash  String?
+  role          UserRole       @default(CUSTOMER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Stripe Customer Mapping
+  stripeCustomerId String?     @unique
+
+  // Relations
+  addresses     Address[]
+  orders        Order[]
+  cartSessions  CartSession[]
+  reviews       Review[]
+
+  @@index([email])
+}
+
+model Address {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  recipientName     String
+  streetAddress1    String
+  streetAddress2    String?
+  city              String
+  stateOrProvince   String
+  postalCode        String
+  country           String   @default("US")
+  phone             String?
+  isDefaultShipping Boolean  @default(false)
+  isDefaultBilling  Boolean  @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orders            Order[]
+
+  @@index([userId])
+}
+
+// ==========================================
+// CATALOG & PRODUCT MODELS
+// ==========================================
+
+model Brand {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  logoUrl     String?
+  website     String?
+  description String?
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([slug])
+}
+
+model Product {
+  id            String              @id @default(uuid())
+  name          String
+  slug          String              @unique
+  description   String              @db.Text
+  
+  // Electronics Taxonomy
+  brandId       String
+  brand         Brand               @relation(fields: [brandId], references: [id])
+  categoryId    String
+  category      Category            @relation(fields: [categoryId], references: [id])
+  
+  series        String              // e.g. "MacBook Pro", "ROG Zephyrus", "GeForce RTX 4090"
+  modelNumber   String?             // Manufacturer Part Number (MPN)
+  releaseDate   DateTime
+  basePrice     Decimal             @db.Decimal(10, 2)
+  isPublished   Boolean             @default(true)
+  featured      Boolean             @default(false)
+
+  // Granular Technical Specs & Variants
+  specs         TechnicalSpec?
+  variants      ProductVariant[]
+  images        ProductImage[]
+  reviews       Review[]
+
+  // Compatibility Mappings
+  compatibleAsPrimary  ProductCompatibility[] @relation("PrimaryProduct")
+  compatibleAsAddition ProductCompatibility[] @relation("CompatibleProduct")
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([brandId, series])
+  @@index([categoryId])
+  @@index([slug])
+}
+
+// Granular Technical Specifications for Side-by-Side Comparison & Filtering
+model TechnicalSpec {
+  id                  String   @id @default(uuid())
+  productId           String   @unique
+  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // Computing & Processing
+  processor           String?  // e.g., "Apple M3 Max", "AMD Ryzen 9 7945HX3D"
+  processorCores      Int?     // e.g., 16
+  processorThreads    Int?     // e.g., 32
+  baseClockGhz        Decimal? @db.Decimal(4, 2)
+  boostClockGhz       Decimal? @db.Decimal(4, 2)
+
+  // Memory & Storage
+  ramGb               Int?     // e.g., 16, 32, 64, 128
+  ramType             String?  // e.g., "Unified Memory", "DDR5-5600", "LPDDR5X"
+  storageGb           Int?     // e.g., 512, 1000, 2000, 4000
+  storageType         String?  // e.g., "PCIe 4.0 NVMe M.2 SSD", "UFS 4.0"
+
+  // Graphics & Display
+  gpuModel            String?  // e.g., "NVIDIA GeForce RTX 4090 Laptop GPU"
+  vramGb              Int?     // e.g., 16
+  displaySizeInches   Decimal? @db.Decimal(4, 1) // e.g., 16.2
+  displayResolution   String?  // e.g., "3456 x 2234", "3840 x 2160"
+  panelType           String?  // e.g., "Liquid Retina XDR Mini-LED", "OLED"
+  refreshRateHz       Int?     // e.g., 120, 165, 240
+
+  // Power & Physical
+  batteryCapacityWh   Decimal? @db.Decimal(5, 2) // e.g., 99.6
+  powerSupplyWattage  Int?     // e.g., 140, 280, 850
+  weightKg            Decimal? @db.Decimal(4, 2) // e.g., 2.14
+  dimensionsMm        String?  // e.g., "355.7 x 248.1 x 16.8"
+
+  // Connectivity & OS
+  operatingSystem     String?  // e.g., "macOS Sonoma", "Windows 11 Pro"
+  wirelessStandard    String?  // e.g., "Wi-Fi 6E (802.11ax), Bluetooth 5.3"
+  ioPorts             String?  // e.g., "3x Thunderbolt 4, 1x HDMI 2.1, 1x SDXC, 1x MagSafe 3"
+
+  // Flexible JSON attribute store for specialized peripheral specs
+  rawJsonSpecs        Json?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([ramGb, storageGb])
+  @@index([processor])
+  @@index([gpuModel])
+}
+
+// Product Variations with Strict Stock Tracking (Standard vs Collector's vs Pro)
+model ProductVariant {
+  id                String       @id @default(uuid())
+  productId         String
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  sku               String       @unique // e.g. "MBP16-M3MAX-BLK-STD"
+  edition           String       // e.g. "Standard", "Founder's Edition", "Collector's Edition"
+  color             String?      // e.g. "Space Black", "Titanium Gray"
+  colorHex          String?      // e.g. "#1C1D1F"
+  
+  price             Decimal      @db.Decimal(10, 2)
+  compareAtPrice    Decimal?     @db.Decimal(10, 2)
+
+  // Real-time Inventory Engine
+  stockQuantity     Int          @default(0)
+  lowStockThreshold Int          @default(5)
+  isAvailable       Boolean      @default(true)
+
+  images            ProductImage[]
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([productId, edition])
+  @@index([sku])
+  @@index([stockQuantity])
+}
+
+model ProductImage {
+  id               String          @id @default(uuid())
+  productId        String
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariantId String?
+  variant          ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  
+  url              String
+  altText          String
+  isPrimary        Boolean         @default(false)
+  sortOrder        Int             @default(0)
+
+  createdAt        DateTime        @default(now())
+
+  @@index([productId])
+  @@index([productVariantId])
+}
+
+// ==========================================
+// COMPATIBILITY & CROSS-SELLING ENGINE
+// ==========================================
+
+enum CompatibilityType {
+  ACCESSORY        // Cases, docks, cables, dongles
+  CHARGER          // Power adapters, GaN chargers
+  WARRANTY         // AppleCare+, 3-Year Extended Accidental Damage
+  SPARE_PART       // Replacement fans, keycaps, cables
+  SOFTWARE_BUNDLE  // OS license, productivity suites
+}
+
+model ProductCompatibility {
+  id                  String            @id @default(uuid())
+  
+  // The host product (e.g. MacBook Pro 16" M3 Max)
+  primaryProductId    String
+  primaryProduct      Product           @relation("PrimaryProduct", fields: [primaryProductId], references: [id], onDelete: Cascade)
+  
+  // Applicable constraint (optional: limit compatibility to specific edition)
+  targetSeries        String?           // e.g. "MacBook Pro"
+  targetEdition       String?           // e.g. "Space Black" or "Collector's Edition"
+
+  // The compatible accessory / warranty service
+  compatibleProductId String
+  compatibleProduct   Product           @relation("CompatibleProduct", fields: [compatibleProductId], references: [id], onDelete: Cascade)
+  
+  compatibilityType   CompatibilityType @default(ACCESSORY)
+  isRecommended       Boolean           @default(false)
+  discountPercentage  Decimal?          @db.Decimal(4, 2) // Optional bundle discount
+  notes               String?           // e.g. "Requires 140W USB-C Power Delivery"
+
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@unique([primaryProductId, compatibleProductId])
+  @@index([primaryProductId, compatibilityType])
+}
+
+// ==========================================
+// CART & PERSISTENCE MODELS
+// ==========================================
+
+model CartSession {
+  id              String      @id @default(uuid())
+  sessionToken    String      @unique // Anonymous guest token or authenticated session hash
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  items           CartItem[]
+  
+  expiresAt       DateTime
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([sessionToken])
+  @@index([userId])
+}
+
+model CartItem {
+  id                 String          @id @default(uuid())
+  cartSessionId      String
+  cartSession        CartSession     @relation(fields: [cartSessionId], references: [id], onDelete: Cascade)
+  
+  productVariantId   String
+  variant            ProductVariant  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  
+  quantity           Int             @default(1)
+
+  // Cross-sell attachment (e.g. digital warranty or bundle attached to this exact item)
+  attachedWarrantyId String?
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@unique([cartSessionId, productVariantId])
+  @@index([cartSessionId])
+}
+
+// ==========================================
+// ORDER, FULFILLMENT & PAYMENT MODELS
+// ==========================================
+
+enum OrderStatus {
+  PENDING
+  PAYMENT_PROCESSING
+  PAID
+  PREPARING_SHIPMENT
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id                     String         @id @default(uuid())
+  orderNumber            String         @unique // e.g. "ORD-2026-89421"
+  userId                 String?
+  user                   User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestEmail             String?
+
+  status                 OrderStatus    @default(PENDING)
+  totalAmount            Decimal        @db.Decimal(10, 2)
+  taxAmount              Decimal        @db.Decimal(10, 2) @default(0.00)
+  shippingCost           Decimal        @db.Decimal(10, 2) @default(0.00)
+  currency               String         @default("USD")
+
+  // Delivery & Snapshot Details
+  shippingAddressId      String?
+  shippingAddress        Address?       @relation(fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  shippingSnapshot       Json           // Immutable snapshot of address at time of order
+  billingSnapshot        Json           // Immutable billing address snapshot
+  
+  shippingCarrier        String?        // e.g. "FedEx", "DHL Express"
+  trackingNumber         String?
+  estimatedDeliveryDate  DateTime?
+
+  items                  OrderItem[]
+  payments               Payment[]
+
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  @@index([orderNumber])
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id                 String         @id @default(uuid())
+  orderId            String
+  order              Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productVariantId   String?
+  variant            ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+
+  // Immutable historical snapshots
+  productName        String
+  variantSku         String
+  edition            String
+  unitPrice          Decimal        @db.Decimal(10, 2)
+  quantity           Int
+  subtotal           Decimal        @db.Decimal(10, 2)
+  specSnapshot       Json?          // Frozen snapshot of specs at purchase time
+
+  createdAt          DateTime       @default(now())
+
+  @@index([orderId])
+}
+
+enum PaymentStatus {
+  REQUIRES_PAYMENT_METHOD
+  REQUIRES_CONFIRMATION
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+model Payment {
+  id                      String         @id @default(uuid())
+  orderId                 String
+  order                   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Stripe Telemetry
+  stripePaymentIntentId   String?        @unique
+  stripeCheckoutSessionId String?        @unique
+  paymentMethodType       String?        // "card", "apple_pay", "google_pay"
+  lastFour                String?
+  
+  status                  PaymentStatus  @default(REQUIRES_PAYMENT_METHOD)
+  amount                  Decimal        @db.Decimal(10, 2)
+  currency                String         @default("USD")
+  receiptUrl              String?
+
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+
+  @@index([orderId])
+  @@index([stripePaymentIntentId])
+}
+
+// ==========================================
+// REVIEWS & SOCIAL PROOF
+// ==========================================
+
+model Review {
+  id         String   @id @default(uuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rating     Int      @default(5) // 1-5 stars
+  title      String
+  comment    String   @db.Text
+  isVerified Boolean  @default(false) // Verified Buyer
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
+  @@index([userId])
+}
+
