@@ -1,8 +1,11 @@
 // src/components/layout/Footer.tsx
-// Site-wide footer — server component
+// Site-wide footer with newsletter subscription — client component
 
+"use client";
+
+import { useState } from 'react';
 import Link from 'next/link';
-import { Zap, Mail, Twitter, Github, Linkedin, MapPin, Phone } from 'lucide-react';
+import { Zap, Mail, Twitter, Github, Linkedin, MapPin, Phone, Check } from 'lucide-react';
 
 /* ── Data ─────────────────────────────────────────────────── */
 const QUICK_LINKS = [
@@ -32,6 +35,18 @@ const SOCIAL_LINKS = [
 
 /* ── Component ────────────────────────────────────────────── */
 export function Footer() {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 4000);
+    }
+  };
+
   return (
     <footer className="bg-slate-50 border-t border-slate-200" aria-label="Site footer">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -110,7 +125,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Column 4 — Contact */}
+          {/* Column 4 — Contact & Newsletter */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-900">
               Contact
@@ -150,24 +165,34 @@ export function Footer() {
               <p className="mt-1 text-xs text-slate-500">
                 New arrivals, exclusive deals, and tech insights.
               </p>
-              <form
-                className="mt-3 flex gap-2"
-                onSubmit={(e) => e.preventDefault()}
-              >
-                <label htmlFor="footer-email" className="sr-only">Email address</label>
-                <input
-                  id="footer-email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+              {subscribed ? (
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-medium text-emerald-700">
+                  <Check className="h-4 w-4" />
+                  Thanks for subscribing!
+                </div>
+              ) : (
+                <form
+                  className="mt-3 flex gap-2"
+                  onSubmit={handleSubscribe}
                 >
-                  Subscribe
-                </button>
-              </form>
+                  <label htmlFor="footer-email" className="sr-only">Email address</label>
+                  <input
+                    id="footer-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+                  >
+                    Subscribe
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>
@@ -188,3 +213,5 @@ export function Footer() {
     </footer>
   );
 }
+
+export default Footer;
