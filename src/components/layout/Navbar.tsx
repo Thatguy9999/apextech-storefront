@@ -36,11 +36,19 @@ export function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* Zustand selectors */
   const cartItemCount = useCartStore((s) => s.getTotalItemsCount());
   const setCartOpen = useCartStore((s) => s.setDrawerOpen);
   const compareCount = useCompareStore((s) => s.getCount());
+
+  const displayCartCount = mounted ? cartItemCount : 0;
+  const displayCompareCount = mounted ? compareCount : 0;
 
   /* Scroll shadow */
   const handleScroll = useCallback(() => {
@@ -124,16 +132,16 @@ export function Navbar() {
               {/* Compare badge */}
               <Link
                 href="/compare"
-                aria-label={`Compare ${compareCount} products`}
+                aria-label={mounted ? `Compare ${displayCompareCount} products` : 'Compare products'}
                 className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
               >
                 <GitCompare className="h-5 w-5" aria-hidden />
-                {compareCount > 0 && (
+                {displayCompareCount > 0 && (
                   <span
                     className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white"
                     aria-hidden
                   >
-                    {compareCount}
+                    {displayCompareCount}
                   </span>
                 )}
               </Link>
@@ -142,16 +150,16 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                aria-label={`Open cart — ${cartItemCount} item${cartItemCount !== 1 ? 's' : ''}`}
+                aria-label={`Open cart — ${displayCartCount} item${displayCartCount !== 1 ? 's' : ''}`}
                 className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
               >
                 <ShoppingCart className="h-5 w-5" aria-hidden />
-                {cartItemCount > 0 && (
+                {displayCartCount > 0 && (
                   <span
                     className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white"
                     aria-hidden
                   >
-                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                    {displayCartCount > 99 ? '99+' : displayCartCount}
                   </span>
                 )}
               </button>

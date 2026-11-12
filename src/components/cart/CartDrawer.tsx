@@ -18,7 +18,12 @@ export function CartDrawer() {
 
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Lock body scroll while drawer is open
   useEffect(() => {
@@ -79,6 +84,8 @@ export function CartDrawer() {
       setIsCheckingOut(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <>
